@@ -1,0 +1,51 @@
+name: mirror-forgejo
+
+# Mirrors the official Forgejo image to ghcr.io/<org>/forgejo with a
+# digest-preserving copy, so dabba's git-server can pull it fast from ghcr's CDN
+# instead of the slow code.forgejo.org registry. skopeo copy preserves the
+# upstream digests, so the mirrored image is byte-identical to the official one
+# (verifiable), unlike a third-party rebuild.
+#
+# Run this on each Forgejo version bump (update the default tag below).
+#
+# ONE-TIME after the first run: set the ghcr package visibility to Public
+# (Packages -> forgejo -> Package settings -> Change visibility), so the
+# quickstart can pull it anonymously.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Forgejo image tag to mirror (full tag, e.g. 15.0.3-rootless)"
+        required: true
+        default: "15.0.3-rootless"
+  schedule:
+    # Defensive monthly re-sync so the package never goes stale/expires.
+    - cron: "0 3 1 * *"
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    env:
+      TAG: ${{ github.event.inputs.tag || '15.0.3-rootless' }}
+      SRC: code.forgejo.org/forgejo/forgejo
+      DST: ghcr.io/${{ github.repository_owner }}/forgejo
+    steps:
+      - name: Install skopeo
+        run: sudo apt-get update && sudo apt-get install -y skopeo
+
+      - name: Log in to ghcr
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | skopeo login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Mirror image (all platforms, digest-preserving)
+        run: skopeo copy --all "docker://${SRC}:${TAG}" "docker://${DST}:${TAG}"
+
+      - name: Verify mirrored digest matches upstream
+        run: |
+          src=$(skopeo inspect --raw "docker://${SRC}:${TAG}" | sha256sum | cut -d' ' -f1)
+          dst=$(skopeo inspect --raw "docker://${DST}:${TAG}" | sha256sum | cut -d' ' -f1)
+          echo "upstream manifest sha256: $src"
+          echo "mirror   manifest sha256: $dst"
+          test "$src" = "$dst" || { echo "digest mismatch — mirror is not byte-identical"; exit 1; }
