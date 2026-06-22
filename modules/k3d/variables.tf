@@ -10,9 +10,9 @@ variable "host_port" {
   default     = 31443
 }
 
-# tflint-ignore: terraform_unused_declarations
 # Declared for interface parity: 01-cluster passes registry_mirrors to whichever
 # substrate module is selected; k3d accepts it but doesn't wire it yet.
+# tflint-ignore: terraform_unused_declarations
 variable "registry_mirrors" {
   description = "Accepted for interface parity with the kind module. Not yet wired into k3d's registry config."
   type        = map(string)
