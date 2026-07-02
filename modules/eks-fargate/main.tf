@@ -9,7 +9,6 @@ locals {
   create_vpc         = var.vpc_id == ""
   vpc_id             = local.create_vpc ? module.vpc[0].vpc_id : var.vpc_id
   private_subnet_ids = local.create_vpc ? module.vpc[0].private_subnets : var.private_subnet_ids
-  public_subnet_ids  = local.create_vpc ? module.vpc[0].public_subnets : var.public_subnet_ids
 
   # Scope the external-dns / cert-manager roles to the delegated zone, or to none
   # until one is provided (DNS + ACME stay dormant rather than over-permissioned).
