@@ -1,0 +1,11 @@
+# dabba drives the cluster from the operator's machine, outside the VPC, so the EKS
+# API endpoint must be publicly reachable for `dabba up` (kubectl/tofu) to bootstrap
+# the platform. Restricting the endpoint would require running dabba from inside the
+# VPC. A hardened deployment can narrow the access CIDRs on the eks-fargate module.
+AVD-AWS-0040
+AVD-AWS-0041
+
+# The EKS module's cluster/node security groups allow all egress, which pods need
+# to pull images and reach AWS APIs, ACME, and the control plane. Locking egress
+# down to an allowlist is impractical for a general-purpose platform cluster.
+AVD-AWS-0104
