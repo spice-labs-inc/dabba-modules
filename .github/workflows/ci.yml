@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        module: [kind, k3d, minikube, git-server, flux-operator]
+        module: [kind, k3d, minikube, eks-fargate, scaleway-kapsule, git-server, flux-operator]
     steps:
       - uses: actions/checkout@v5
       - uses: opentofu/setup-opentofu@v2
